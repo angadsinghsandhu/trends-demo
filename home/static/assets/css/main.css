@@ -3155,6 +3155,8 @@ input, select, textarea {
 			text-align: center;
 			text-decoration: none;
 			text-transform: uppercase;
+			padding-left: 10%;
+			padding-right: 10%;
 		}
 
 		.pagination .next, .pagination .previous {
