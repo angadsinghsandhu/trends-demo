@@ -17,6 +17,8 @@ import json
 from gensim.models import Word2Vec
 from collections import Counter
 from home.helper.process import rem_stop_words
+import re
+import string
 # from home.helper.transform import common_terms
 
 # Base directory for data and models
@@ -25,6 +27,7 @@ DATA_DIR = BASE_DIR + "data/"
 MODELS_DIR = BASE_DIR + "models/"
 
 def common_terms(terms, threshold=0.8):
+
     # Flatten list of sets and count occurrences of each word
     word_counts = Counter(word for term_set in terms for word in term_set)
     
@@ -32,7 +35,7 @@ def common_terms(terms, threshold=0.8):
     required_count = threshold * len(terms)
     
     # Filter words that meet the threshold
-    common_words = {word for word, count in word_counts.items() if count >= required_count}
+    common_words = {word for word, count in word_counts.items() if count >= required_count and not any(char in string.punctuation for char in word)}
 
     # return
     return list(common_words)
@@ -63,7 +66,7 @@ def create_common_words():
     with open(BASE_DIR + 'words.json', 'w') as fp:
         json.dump(words_data, fp, indent=4)
 
-def create_word2vec_models():
+def create_nursing():
     """
     Reads each CSV file in the 'data' directory, processes the data by removing stop words,
     tokenizes it, trains a Word2Vec model, and saves the model in the 'models' directory.
@@ -77,7 +80,7 @@ def create_word2vec_models():
 
     labels = []
     for file_name in os.listdir(DATA_DIR):
-        if file_name.endswith(".csv"):
+        if file_name.endswith(".csv") and str(file_name) != "full.csv":
             label = file_name.split('.')[0]
             labels.append(label)
 
