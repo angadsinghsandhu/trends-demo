@@ -11,12 +11,20 @@ import pandas as pd
 import os
 import argparse
 # from datetime import datetime
-import spacy
 import re
 # from home.helper.process import rem_stop_words
 
-# Load spaCy's English language model
-nlp = spacy.load('en_core_web_sm')
+import re
+import re
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+
+nltk.download('wordnet')
+nltk.download('punkt')
+
+stop_words = set(stopwords.words('english'))
 
 def get_args():
     # Set up argument parser
@@ -29,77 +37,39 @@ def get_args():
 
     return parser.parse_args()
 
-# Load spaCy's English language model
-nlp = spacy.load('en_core_web_sm')
+def clean(df: pd.DataFrame) -> pd.DataFrame:
 
-# def clean(df: pd.DataFrame) -> pd.DataFrame:
-#     df["text"] = df["text"].apply(lambda s: s.replace("NOTE- TERMS IN BRACKETS HAVE BEEN EDITED TO PROTECT CONFIDENTIALITY", ""))
-#     df["text"] = df["text"].apply(lambda s: s.replace("**** ", ""))
-#     df["text"] = df["text"].str.replace(r'^\d{5}', '', regex=True)
-#     df["text"] = df["text"].apply(lambda s: s.replace("<BR/>", ""))
-#     return df
-
-# Define the text processing function
-def process_text(text):
-    print("..2.5")
-    if pd.isnull(text):
-        return ""
-    # Remove specific unwanted phrases
-    text = text.replace("**NOTE- TERMS IN BRACKETS HAVE BEEN EDITED TO PROTECT CONFIDENTIALITY**", "")
-    text = text.replace("NOTE- TERMS IN BRACKETS HAVE BEEN EDITED TO PROTECT CONFIDENTIALITY", "")
-    text = text.replace("**** ", "")
-    text = text.replace("<BR/>", " ")
-    text = text.replace("<BR>", " ")
-    text = text.replace("<br/>", " ")
-    text = text.replace("<br>", " ")
-    text = text.replace(">", " ")
-    text = text.replace("<", " ")
-    text = re.sub(r'^\d{5}', '', text)  # Remove leading 5-digit numbers
-
-    # Remove HTML tags and excess whitespace
-    text = re.sub(r'<[^>]+>', '', text)
-    text = re.sub(r'\s+', ' ', text)
-
-    # Remove non-alphanumeric characters except spaces
-    text = re.sub(r'[^A-Za-z0-9\s]', '', text)
-
-    # Lowercase the text
-    text = text.lower()
-
-    # Tokenize, remove stopwords, and lemmatize
-    doc = nlp(text)
-    tokens = [token.lemma_ for token in doc if token.is_alpha and not token.is_stop]
-
-    # Join tokens back into a single string
-    clean_text = ' '.join(tokens)
-    return clean_text
-
-
-def clean(DATA_DIR) -> pd.DataFrame:
-    '''
-    Cleans and preprocesses the nursing home inspection data by removing excess formatting,
-    retaining only readable text, removing stopwords, and performing lemmatization.
-
-    Parameters:
-    - df (pd.DataFrame): The input DataFrame containing at least a 'text' column.
-
-    Returns:
-    - pd.DataFrame: The cleaned DataFrame with the 'text' column processed.
-    '''
-    labels = []
-    for file_name in os.listdir(DATA_DIR):
-        if file_name.endswith(".csv") and file_name != "full.csv":
-            label = file_name.split('.')[0]
-            labels.append(label)
-
-            # Read the CSV file
-            df = pd.read_csv(os.path.join(DATA_DIR, file_name), encoding="utf-8")
+    def clean_inspection_text(s: str) -> str:
+        lemmatizer = WordNetLemmatizer()
+        word_tokens = word_tokenize(s)
+        filtered_words = [
+            lemmatizer.lemmatize(w) for w in word_tokens if w.lower() not in stop_words and not re.search(r'\d', w)
+        ]
+        cleaned = []
+        for word in filtered_words:
+            word = re.sub(r'[^A-Za-z0-9\s]', ' ', word)
+            word = re.sub(r'(?<=[\w])([^\w\s])(?=[\w])', r' \1 ', word)
+            
+            cleaned.append(word)
+        cleaned_sentence = ' '.join(cleaned)
+        return cleaned_sentence
     
-            # Apply the text processing function to the 'text' column
-            df['text'] = df['text'].apply(process_text)
+    # remove initial phrases known in text
+    df["text"] = df["text"].apply(lambda s: 
+        s.replace("**** ", "")
+        .replace("NOTE- TERMS IN BRACKETS HAVE BEEN EDITED TO PROTECT CONFIDENTIALITY", "")
+        .replace("****", "")
+        .replace(r"^\d{5}", "")
+        .replace("<BR/>", "")
+    )
 
-            # Save the cleaned data to a new CSV file
-            df.to_csv(os.path.join(DATA_DIR, f"{label}_cleaned.csv"), index=False)
+    # remove symbols and replace with space to split tokens 
+    df["text"] = df["text"].apply(lambda s: re.sub(r'[^A-Za-z0-9\s]', ' ', s))
+
+    # lemmatize and remove stop words
+    df["text"] = df["text"].apply(lambda s: clean_inspection_text(s))
+    
+    return df
 
 def split_csv_by_month_year(input_file, output_folder="data"):
     """
@@ -119,8 +89,8 @@ def split_csv_by_month_year(input_file, output_folder="data"):
     # Convert 'date' to datetime format for easy grouping by month and year
     df['date'] = pd.to_datetime(df['date'], format='%m/%d/%Y')
 
-    # # clean data
-    # df = clean(df)
+    # clean data
+    df = clean(df)
 
     # Group by year and month, then save each group as a separate CSV
     for (year, month), group in df.groupby([df['date'].dt.year, df['date'].dt.month]):
@@ -152,10 +122,35 @@ def split_csv_by_time(input_file, output_folder="data", num_files=12):
 
     # Read the CSV into a DataFrame
     df = pd.read_csv(input_file)
+
+    # rename columns
+    df.columns = [
+        "Unnamed: 0",
+        "facility_name",
+        "facility_id",
+        "address",
+        "city",
+        "state",
+        "zip",
+        "date",
+        "deficiency_tag",
+        "scope_severity",
+        "complaint",
+        "standard",
+        "eventid",
+        "text",
+        "UID",
+        "Region",
+        "year"
+    ]
+
     print("..1")
 
     # Convert 'date' to datetime format for sorting, coercing errors to NaT
     df['date'] = pd.to_datetime(df['date'], format='%m/%d/%Y', errors='coerce')
+
+    # clean data
+    df = clean(df)
 
     # Drop rows where 'date' conversion failed (NaT values)
     num_nat = df['date'].isna().sum()

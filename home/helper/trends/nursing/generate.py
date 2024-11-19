@@ -107,6 +107,10 @@ def gen_nursing_trends(base_term: str, rel_terms: List[str]) -> Tuple[List[str],
         results = pool.map(process_model, args)
 
     # Sort results by labels to maintain consistent ordering
+
+    # # TODO: NEW 
+    # results = [row for row in results if row[0][:2].isdigit()]
+
     results.sort(key=lambda x: (int(x[0][:2]), MONTHS[x[0][2:5].lower()]))
 
     labels = []

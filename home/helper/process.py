@@ -44,6 +44,9 @@ def cleaner(text):
     text = re.sub('[0-9*]','',text)
 
     text = re.sub(r'(?:^| )\w(?:$| )', ' ', text)
+
+    # split joined tokens, "abuse.on" -> "abuse . on"
+    text = re.sub(r'(?<=[\w])([^\w\s])(?=[\w])', r' \1 ', text)
     
     a = nltk.pos_tag(tokenize_only(text))
     a = pd.DataFrame(a)
