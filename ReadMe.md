@@ -71,7 +71,7 @@ docker exec -it <container_id> /bin/bash
 ## Important Links
 
 - Paper Pre-Print: [ArXiv Link](http://dx.doi.org/10.48550/arXiv.2209.11717)
-- MIND Lab Website: [CLICK HERE](https://mindlab.cs.umd.edu/)
+- MIND Lab: [Website](https://mindlab.cs.umd.edu/)
 - Our LinkedIn Profiles:
   - [LinkedIn: Angad](https://www.linkedin.com/in/angad-sandhu/)
   - [LinkedIn: Vishesh](https://www.linkedin.com/in/vishesh-gupta-975550206/)
@@ -81,7 +81,7 @@ docker exec -it <container_id> /bin/bash
   - [GitHub: Vishesh](https://github.com/visheshnarayan)
 - My Medium Blogs: [Medium: Angad](https://angadsandhu.medium.com/)
 - My Twitter Profiles: [Twitter: Angad](https://x.com/angadsandhuwork)
-- Professor Agrawala's Website: [LINK](https://www.cs.umd.edu/people/agrawala)
+- MIND Lab Director, Professor Agrawala's Website: [LINK](https://www.cs.umd.edu/people/agrawala)
 
 ## DIRECTORY STRUCTURE
 
